@@ -12,7 +12,7 @@ Change Gamma settings with hotkeys that are set in the CET bindings, and also th
 The files will be located under the following directories:
 
 ```
-The files will be located under "\Cyberpunk 2077\bin\x64\plugins\cyber_engine_tweaks\mods\GammaControls".
+\Cyberpunk 2077\bin\x64\plugins\cyber_engine_tweaks\mods\GammaControls
 ```
 
 ## Credits
