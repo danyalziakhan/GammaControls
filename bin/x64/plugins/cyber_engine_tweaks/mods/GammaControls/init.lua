@@ -1,13 +1,8 @@
 local GameSettings = require('Modules/GameSettings')
-local GameSession = require('Modules/GameSession')
 local GameUI = require('Modules/GameUI')
 local Cron = require('Modules/Cron')
 
-local isPhoto = false
-local isPopup = false
-local isWeaponWheel = false
-local isShard = false
-local isTutorial = false
+local isPhotoMode = false
 
 local minValue = 0.500
 local maxValue = 2.000
@@ -20,9 +15,16 @@ local r, g, b = 0.486, 0.988, 0
 
 local configFileName = "config.json"
 local settings = {
-    value = 1.000,
-    stepValue = 0.010,
+    Current = {
+        value = 1.000,
+        stepValue = 0.010,
+    },
+    Preset = {
+        value = 1.000,
+        stepValue = 0.010,
+    },
     isDefaultGammainMenus = false,
+    isDefaultGammainPhotoMode = false,
     isEnabledNotification = true
 }
 
@@ -72,27 +74,57 @@ end)
 registerForEvent("onDraw", function()
     if notificationVisible then
         DrawNoti()
-        return
     end
 
     if not isOverlayOpen then
         return
     end
 
-    ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, 300, 40)
     ImGui.Begin("Gamma Controls", ImGuiWindowFlags.AlwaysAutoResize)
 
     local isGammaChanged = false
     local isStepValueChanged = false
 
+    if not settings.isDefaultGammainMenus and not settings.isDefaultGammainPhotoMode then
+        settings.Current.value, isGammaChanged = ImGui.DragFloat(" Gamma ", settings.Current.value,
+        settings.Current.stepValue, minValue,
+        maxValue, "%.3f",
+        ImGuiSliderFlags.ClampOnInput)
+    settings.Current.stepValue, isStepValueChanged = ImGui.DragFloat(" Step Value ", settings.Current.stepValue,
+        0.001, 0.001,
+        0.1,
+        "%.3f", ImGuiSliderFlags.ClampOnInput)
+    elseif settings.isDefaultGammainMenus and not IsInMenu() and not settings.isDefaultGammainPhotoMode then
+        settings.Current.value, isGammaChanged = ImGui.DragFloat(" Gamma ", settings.Current.value,
+        settings.Current.stepValue, minValue,
+        maxValue, "%.3f",
+        ImGuiSliderFlags.ClampOnInput)
+    settings.Current.stepValue, isStepValueChanged = ImGui.DragFloat(" Step Value ", settings.Current.stepValue,
+        0.001, 0.001,
+        0.1,
+        "%.3f", ImGuiSliderFlags.ClampOnInput)
+    elseif settings.isDefaultGammainPhotoMode and not isPhotoMode and not settings.isDefaultGammainMenus then
+        settings.Current.value, isGammaChanged = ImGui.DragFloat(" Gamma ", settings.Current.value,
+        settings.Current.stepValue, minValue,
+        maxValue, "%.3f",
+        ImGuiSliderFlags.ClampOnInput)
+    settings.Current.stepValue, isStepValueChanged = ImGui.DragFloat(" Step Value ", settings.Current.stepValue,
+        0.001, 0.001,
+        0.1,
+        "%.3f", ImGuiSliderFlags.ClampOnInput)
+    elseif (settings.isDefaultGammainPhotoMode and not isPhotoMode) and (settings.isDefaultGammainMenus and not IsInMenu()) then
+        settings.Current.value, isGammaChanged = ImGui.DragFloat(" Gamma ", settings.Current.value,
+        settings.Current.stepValue, minValue,
+        maxValue, "%.3f",
+        ImGuiSliderFlags.ClampOnInput)
+    settings.Current.stepValue, isStepValueChanged = ImGui.DragFloat(" Step Value ", settings.Current.stepValue,
+        0.001, 0.001,
+        0.1,
+        "%.3f", ImGuiSliderFlags.ClampOnInput)
+    end
+
     if settings.isDefaultGammainMenus then
-        if not IsInMenu() and not isPopup and not isWeaponWheel and not isShard and not isTutorial then
-            settings.value, isGammaChanged = ImGui.DragFloat(" Gamma ", settings.value, 0.001, minValue, maxValue, "%.3f",
-                ImGuiSliderFlags.ClampOnInput)
-            settings.stepValue, isStepValueChanged = ImGui.DragFloat(" Step Value ", settings.stepValue, 0.001, 0.001,
-                0.1,
-                "%.3f", ImGuiSliderFlags.ClampOnInput)
-        else
+        if IsInMenu() then
             ImGui.Spacing()
             ImGui.Spacing()
             ImGui.PushStyleColor(ImGuiCol.Text, 1.0, 0.23, 0.23, 1.0)
@@ -103,26 +135,31 @@ registerForEvent("onDraw", function()
             ImGui.Spacing()
             ImGui.Spacing()
 
-            _, _ = ImGui.DragFloat(" Gamma ", settings.value, 0.0, 0.0, 0.0)
-            _, _ = ImGui.DragFloat(" Step Value ", settings.stepValue, 0.0, 0.0,
-                0.0)
+            _, _ = ImGui.DragFloat(" Gamma ", settings.Current.value, 0.0)
+            _, _ = ImGui.DragFloat(" Step Value ", settings.Current.stepValue, 0.0)
         end
-    else
-        settings.value, isGammaChanged = ImGui.DragFloat(" Gamma ", settings.value, 0.001, minValue, maxValue, "%.3f",
-            ImGuiSliderFlags.ClampOnInput)
-        settings.stepValue, isStepValueChanged = ImGui.DragFloat(" Step Value ", settings.stepValue, 0.001, 0.001,
-            0.1,
-            "%.3f", ImGuiSliderFlags.ClampOnInput)
+    end
+    if settings.isDefaultGammainPhotoMode then
+        if isPhotoMode then
+            ImGui.Spacing()
+            ImGui.Spacing()
+            ImGui.PushStyleColor(ImGuiCol.Text, 1.0, 0.23, 0.23, 1.0)
+            ImGui.Text("We are currently inside the Photo Mode.")
+            ImGui.Text("Gamma values can not be changed.")
+            ImGui.Text("Uncheck \"Default Gamma in Photo Mode\" if you want to change the values.")
+            ImGui.PopStyleColor(1)
+            ImGui.Spacing()
+            ImGui.Spacing()
+
+            _, _ = ImGui.DragFloat(" Gamma ", settings.Current.value, 0.0)
+            _, _ = ImGui.DragFloat(" Step Value ", settings.Current.stepValue, 0.0)
+        end
     end
 
     if isGammaChanged then
-        if settings.isDefaultGammainMenus then
-            if not IsInMenu() and not isPopup and not isWeaponWheel and not isShard and not isTutorial then
-                SetGamma(settings.value)
-            end
-        else
-            SetGamma(settings.value)
-        end
+        if settings.isDefaultGammainMenus and not IsInMenu() then SetGamma(settings.Current.value) end
+        if settings.isDefaultGammainPhotoMode and not isPhotoMode then SetGamma(settings.Current.value) end
+        if not settings.isDefaultGammainMenus and not settings.isDefaultGammainPhotoMode then SetGamma(settings.Current.value) end
         SaveSettings()
     end
 
@@ -131,19 +168,78 @@ registerForEvent("onDraw", function()
     end
 
     ImGui.Spacing()
-    if ImGui.Button(" Reset Defaults ") then
-        if settings.isDefaultGammainMenus then
-            if not IsInMenu() and not isPopup and not isWeaponWheel and not isShard and not isTutorial then
-                settings.value = 1.000
-                settings.stepValue = 0.010
-                SaveSettings()
-                SetGamma(1.000)
-            end
-        else
-            settings.value = 1.000
-            settings.stepValue = 0.010
+    if ImGui.Button(" Save ") then
+        settings.Preset.value = settings.Current.value
+        settings.Preset.stepValue = settings.Current.stepValue
+        SaveSettings()
+    end
+
+    ImGui.SameLine()
+    if ImGui.Button(" Load ") then
+        if not settings.isDefaultGammainMenus and not settings.isDefaultGammainPhotoMode then
+            settings.Current.value = settings.Preset.value
+            settings.Current.stepValue = settings.Preset.stepValue
             SaveSettings()
-            SetGamma(1.000)
+            SetGamma(settings.Current.value)
+        elseif settings.isDefaultGammainMenus and not IsInMenu() then
+            if settings.isDefaultGammainPhotoMode and not isPhotoMode then
+                settings.Current.value = settings.Preset.value
+                settings.Current.stepValue = settings.Preset.stepValue
+                SaveSettings()
+                SetGamma(settings.Current.value)
+            elseif not settings.isDefaultGammainPhotoMode then
+                settings.Current.value = settings.Preset.value
+                settings.Current.stepValue = settings.Preset.stepValue
+                SaveSettings()
+                SetGamma(settings.Current.value)
+            end
+        elseif settings.isDefaultGammainPhotoMode and not isPhotoMode then
+            if settings.isDefaultGammainMenus and not IsInMenu() then
+                settings.Current.value = settings.Preset.value
+                settings.Current.stepValue = settings.Preset.stepValue
+                SaveSettings()
+                SetGamma(settings.Current.value)
+            elseif not settings.isDefaultGammainMenus then
+                settings.Current.value = settings.Preset.value
+                settings.Current.stepValue = settings.Preset.stepValue
+                SaveSettings()
+                SetGamma(settings.Current.value)
+            end
+        end
+    end
+
+    ImGui.Spacing()
+    ImGui.Spacing()
+    if ImGui.Button(" Reset Defaults ") then
+        if not settings.isDefaultGammainMenus and not settings.isDefaultGammainPhotoMode then
+            settings.Current.value = 1.000
+            settings.Current.stepValue = 0.010
+            SaveSettings()
+            SetDefaultGamma()
+        elseif settings.isDefaultGammainMenus and not IsInMenu() then
+            if settings.isDefaultGammainPhotoMode and not isPhotoMode then
+                settings.Current.value = 1.000
+                settings.Current.stepValue = 0.010
+                SaveSettings()
+                SetDefaultGamma()
+            elseif not settings.isDefaultGammainPhotoMode then
+                settings.Current.value = 1.000
+                settings.Current.stepValue = 0.010
+                SaveSettings()
+                SetDefaultGamma()
+            end
+        elseif settings.isDefaultGammainPhotoMode and not isPhotoMode then
+            if settings.isDefaultGammainMenus and not IsInMenu() then
+                settings.Current.value = 1.000
+                settings.Current.stepValue = 0.010
+                SaveSettings()
+                SetDefaultGamma()
+            elseif not settings.isDefaultGammainMenus then
+                settings.Current.value = 1.000
+                settings.Current.stepValue = 0.010
+                SaveSettings()
+                SetDefaultGamma()
+            end
         end
     end
 
@@ -153,10 +249,58 @@ registerForEvent("onDraw", function()
 
     if isDefaultGammainMenusChanged then
         SaveSettings()
+        if settings.isDefaultGammainMenus then
+            if IsInMenu() then
+                SetDefaultGamma()
+            else
+                if settings.isDefaultGammainPhotoMode and isPhotoMode then
+                    SetDefaultGamma()
+                else
+                    SetGamma(settings.Current.value)
+                end
+            end
+        else
+            if settings.isDefaultGammainPhotoMode and isPhotoMode then
+                SetDefaultGamma()
+            else
+                SetGamma(settings.Current.value)
+            end
+        end
     end
 
     text =
     "Set default gamma on game settings, menu, phone popup, radio controls popup, vehicle call controls popup, weapon wheel, loading screen, read shard and tutorial popups."
+    Tooltip(text)
+
+    ImGui.Spacing()
+    settings.isDefaultGammainPhotoMode, isDefaultGammainPhotoModeChanged = ImGui.Checkbox("Default Gamma in Photo Mode",
+        settings.isDefaultGammainPhotoMode)
+
+    if isDefaultGammainPhotoModeChanged then
+        SaveSettings()
+
+        if settings.isDefaultGammainPhotoMode then
+            if isPhotoMode then
+                SetDefaultGamma()
+            else
+                if settings.isDefaultGammainMenus and IsInMenu() then
+                    SetDefaultGamma()
+                else
+                    SetGamma(settings.Current.value)
+                end
+            end
+        else
+            if settings.isDefaultGammainMenus and IsInMenu() then
+                SetDefaultGamma()
+            else
+                SetGamma(settings.Current.value)
+            end
+        end
+
+    end
+
+    text =
+    "Set default gamma in Photo Mode."
     Tooltip(text)
 
     ImGui.Spacing()
@@ -167,11 +311,10 @@ registerForEvent("onDraw", function()
         SaveSettings()
     end
 
-    text = "Disable it if you experience crashes when rapidly toggling settings."
+    text = "Disable it if you experience crashes when rapidly toggling settings.Current."
     Tooltip(text)
 
     ImGui.End()
-    ImGui.PopStyleVar(1)
 end)
 
 function IsInMenu()
@@ -192,77 +335,86 @@ function SetDefaultGamma()
 end
 
 function IncreaseGamma()
-    if settings.isDefaultGammainMenus then
-        if IsInMenu() or isPopup or isWeaponWheel or isShard or isTutorial then
-            return
+    if (settings.isDefaultGammainMenus and IsInMenu()) or (settings.isDefaultGammainPhotoMode and isPhotoMode) then
+        if settings.isEnabledNotification then
+            r, g, b = 1.0, 0.23, 0.23
+            notificationText = " Gamma cannot be changed "
+            notificationVisible = true
+            Cron.After(notificationSeconds, function()
+                notificationVisible = false
+                r, g, b = 0.486, 0.988, 0
+            end)
         end
+
+        return
     end
 
     local currentGamma = GetGamma()
-    local newGamma = tonumber(string.format("%.3f", currentGamma + settings.stepValue))
+    local newGamma = tonumber(string.format("%.3f", currentGamma + settings.Current.stepValue))
 
     if newGamma <= maxValue then
         SetGamma(newGamma)
     end
 
     if settings.isEnabledNotification then
-        notificationText = "Gamma set to " .. string.format("%.3f", (newGamma <= maxValue) and newGamma or currentGamma)
+        notificationText = " Gamma set to " ..
+        string.format("%.3f ", (newGamma <= maxValue) and newGamma or currentGamma)
         notificationVisible = true
         Cron.After(notificationSeconds, function()
             notificationVisible = false
         end)
     end
 
-    settings.value = newGamma
+    settings.Current.value = newGamma
     SaveSettings()
 end
 
 function DecreaseGamma()
-    if settings.isDefaultGammainMenus then
-        if IsInMenu() or isPopup or isWeaponWheel or isShard or isTutorial then
-            return
+    if (settings.isDefaultGammainMenus and IsInMenu()) or (settings.isDefaultGammainPhotoMode and isPhotoMode) then
+        if settings.isEnabledNotification then
+            r, g, b = 1.0, 0.23, 0.23
+            notificationText = " Gamma cannot be changed "
+            notificationVisible = true
+            Cron.After(notificationSeconds, function()
+                notificationVisible = false
+                r, g, b = 0.486, 0.988, 0
+            end)
         end
+
+        return
     end
 
     local currentGamma = GetGamma()
-    local newGamma = tonumber(string.format("%.3f", currentGamma - settings.stepValue))
+    local newGamma = tonumber(string.format("%.3f", currentGamma - settings.Current.stepValue))
 
     if newGamma >= minValue then
         SetGamma(newGamma)
     end
 
     if settings.isEnabledNotification then
-        notificationText = "Gamma set to " .. string.format("%.3f", (newGamma >= minValue) and newGamma or currentGamma)
+        notificationText = " Gamma set to " ..
+        string.format("%.3f ", (newGamma >= minValue) and newGamma or currentGamma)
         notificationVisible = true
         Cron.After(notificationSeconds, function()
             notificationVisible = false
         end)
     end
 
-    settings.value = newGamma
+    settings.Current.value = newGamma
     SaveSettings()
 end
 
 registerForEvent('onInit', function()
     LoadSettings()
 
-    -- Start Menu
-    Observe('SingleplayerMenuGameController', 'OnInitialize', function()
-        if settings.isDefaultGammainMenus then
-            SetDefaultGamma()
-        else
-            SetGamma(settings.value)
-        end
-    end)
-
     GameUI.Listen("MenuNav", function(state)
         -- Set custom Gamma when inside Gamma correction screen
         if settings.isDefaultGammainMenus and state.submenu ~= nil and state.submenu == "Brightness" then
-            SetGamma(settings.value)
+            SetGamma(settings.Current.value)
         end
         if state.lastSubmenu ~= nil and state.lastSubmenu == "Brightness" then
             -- Reflect the new Gamma in the GUI after the user has set it on Gamma correction screen
-            settings.value = GetGamma()
+            settings.Current.value = GetGamma()
             SaveSettings()
 
             -- Set default Gamma when outside Gamma correction screen
@@ -272,29 +424,113 @@ registerForEvent('onInit', function()
         end
     end)
 
-    GameUI.Listen("PhotoModeOpen", function(_)
-        isPhoto = true
+    -- Start Menu
+    Observe('SingleplayerMenuGameController', 'OnInitialize', function()
+        if settings.isDefaultGammainMenus then
+            SetDefaultGamma()
+        else
+            SetGamma(settings.Current.value)
+        end
     end)
 
-    GameUI.Listen("PhotoModeClose", function(_)
-        isPhoto = false
+    -- Different menus (inventory, map, etc.)
+    Observe('gameuiPopupsManager', 'OnMenuUpdate', function(_, IsInMenu)
+        if IsInMenu then
+            if settings.isDefaultGammainMenus then
+                SetDefaultGamma()
+            end
+        else
+            if settings.isDefaultGammainMenus then
+                SetGamma(settings.Current.value)
+            end
+        end
     end)
 
-    GameSession.Listen("Pause", function(_)
-        -- Set default Gamma in all Pause scenarios except during Photo mode because it's not desirable to set custom Gamma when taking screenshots
-        if settings.isDefaultGammainMenus and not isPhoto then
+    -- Set default Gamma in all Pause scenarios except during Photo mode because it's not desirable to set custom Gamma when taking screenshots
+    Observe('gameuiPhotoModeMenuController', 'OnShow', function()
+        isPhotoMode = true
+        if settings.isDefaultGammainPhotoMode then
             SetDefaultGamma()
         end
     end)
 
-    GameSession.Listen("Resume", function(state)
-        -- Since we are already listening to blurred events (popups, wheel, etc.), we don't need to change Gamma twice in such cases
-        if settings.isDefaultGammainMenus and not state.wasBlurred then
-            SetGamma(settings.value)
+    Observe('gameuiPhotoModeMenuController', 'OnHide', function()
+        isPhotoMode = false
+        if settings.isDefaultGammainPhotoMode then
+            SetGamma(settings.Current.value)
         end
     end)
 
-    ObserveBefore('LoadingScreenProgressBarController', 'OnInitialize', function(_)
+    Observe('gameuiTutorialPopupGameController', 'PauseGame', function(_, isTutorialActive)
+        if isTutorialActive then
+            if settings.isDefaultGammainMenus then
+                SetDefaultGamma()
+            end
+        else
+            if settings.isDefaultGammainMenus then
+                SetGamma(settings.Current.value)
+            end
+        end
+    end)
+
+    -- Weapon Wheel
+    Observe('RadialWheelController', 'OnOpenWheelRequest', function(_, _)
+        if settings.isDefaultGammainMenus then
+            SetDefaultGamma()
+        end
+    end)
+
+    Observe('RadialWheelController', 'Shutdown', function(_, _)
+        if settings.isDefaultGammainMenus then
+            SetGamma(settings.Current.value)
+        end
+    end)
+
+    -- Observe('VehicleRadioPopupGameController', 'OnInitialize', function(_, _)
+    --     if settings.isDefaultGammainMenus then
+    --         SetDefaultGamma()
+    --     end
+    -- end)
+
+    -- Vehicle and Radio menu
+    Observe('VehicleRadioPopupGameController', 'OnClose', function(_, _)
+        if settings.isDefaultGammainMenus then
+            SetGamma(settings.Current.value)
+        end
+    end)
+
+    Observe('VehiclesManagerPopupGameController', 'OnInitialize', function(_, _)
+        if settings.isDefaultGammainMenus then
+            SetDefaultGamma()
+        end
+    end)
+
+    Observe('VehiclesManagerPopupGameController', 'OnClose', function(_, _)
+        if settings.isDefaultGammainMenus then
+            SetGamma(settings.Current.value)
+        end
+    end)
+
+    -- Phone dialer
+    Observe('NewHudPhoneGameController', 'OnContactListSpawned', function(_, _)
+        if settings.isDefaultGammainMenus then
+            SetDefaultGamma()
+        end
+    end)
+
+    Observe('NewHudPhoneGameController', 'OnContactListClosed', function(_, _)
+        if settings.isDefaultGammainMenus then
+            SetGamma(settings.Current.value)
+        end
+    end)
+
+    Observe('FastTravelSystem', 'OnLoadingScreenFinished', function(_, _)
+        if settings.isDefaultGammainMenus then
+            SetGamma(settings.Current.value)
+        end
+    end)
+
+    Observe('LoadingScreenProgressBarController', 'OnInitialize', function(_)
         if settings.isDefaultGammainMenus then
             SetDefaultGamma()
         end
@@ -303,79 +539,13 @@ registerForEvent('onInit', function()
     Observe('LoadingScreenProgressBarController', 'SetProgress', function(_, progress)
         -- for some fucking reason, the progress doesn't always set to 1.0 when loading is finished
         -- will change Gamma just before the loading screen is ended, but it's a small compromise
-        if settings.isDefaultGammainMenus and progress > 0.91 then
-            SetGamma(settings.value)
+         if progress > 0.91 then
+            if settings.isDefaultGammainMenus then
+                SetGamma(settings.Current.value)
+            end
         end
     end)
 
-    GameUI.Listen("PopupOpen", function(_)
-        isPopup = true
-        if settings.isDefaultGammainMenus then
-            SetDefaultGamma()
-        end
-    end)
-
-    GameUI.Listen("PopupClose", function(_)
-        isPopup = false
-        if settings.isDefaultGammainMenus then
-            SetGamma(settings.value)
-        end
-    end)
-
-    GameUI.Listen("WheelOpen", function(_)
-        isWeaponWheel = true
-        if settings.isDefaultGammainMenus then
-            SetDefaultGamma()
-        end
-    end)
-
-    GameUI.Listen("WheelClose", function(_)
-        isWeaponWheel = false
-        if settings.isDefaultGammainMenus then
-            SetGamma(settings.value)
-        end
-    end)
-
-    GameUI.Listen("ShardOpen", function(_)
-        isShard = true
-        if settings.isDefaultGammainMenus then
-            SetDefaultGamma()
-        end
-    end)
-
-    GameUI.Listen("ShardClose", function(_)
-        isShard = false
-        if settings.isDefaultGammainMenus then
-            SetGamma(settings.value)
-        end
-    end)
-
-    GameUI.Listen("TutorialOpen", function(_)
-        isTutorial = true
-        if settings.isDefaultGammainMenus then
-            SetDefaultGamma()
-        end
-    end)
-
-    GameUI.Listen("TutorialClose", function(_)
-        isTutorial = false
-        if settings.isDefaultGammainMenus then
-            SetGamma(settings.value)
-        end
-    end)
-
-    -- These are buggy/not consistent, so commenting them out for now just for the future reference
-    -- GameUI.Listen("LoadingStart", function(state)
-    -- end)
-
-    -- GameUI.Listen("LoadingFinish", function(state)
-    -- end)
-
-    -- GameUI.Listen("FastTravelStart", function(state)
-    -- end)
-
-    -- GameUI.Listen("FastTravelFinish", function(state)
-    -- end)
 end)
 
 registerForEvent('onUpdate', function(delta)
