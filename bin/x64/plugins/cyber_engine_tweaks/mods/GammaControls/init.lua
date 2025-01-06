@@ -87,40 +87,24 @@ registerForEvent("onDraw", function()
 
     if not settings.isDefaultGammainMenus and not settings.isDefaultGammainPhotoMode then
         settings.Current.value, isGammaChanged = ImGui.DragFloat(" Gamma ", settings.Current.value,
-        settings.Current.stepValue, minValue,
-        maxValue, "%.3f",
-        ImGuiSliderFlags.ClampOnInput)
-    settings.Current.stepValue, isStepValueChanged = ImGui.DragFloat(" Step Value ", settings.Current.stepValue,
-        0.001, 0.001,
-        0.1,
-        "%.3f", ImGuiSliderFlags.ClampOnInput)
+            settings.Current.stepValue, minValue, maxValue, "%.3f")
+        settings.Current.stepValue, isStepValueChanged = ImGui.DragFloat(" Step Value ", settings.Current.stepValue,
+            0.001, 0.001, 0.1, "%.3f")
     elseif settings.isDefaultGammainMenus and not IsInMenu() and not settings.isDefaultGammainPhotoMode then
         settings.Current.value, isGammaChanged = ImGui.DragFloat(" Gamma ", settings.Current.value,
-        settings.Current.stepValue, minValue,
-        maxValue, "%.3f",
-        ImGuiSliderFlags.ClampOnInput)
-    settings.Current.stepValue, isStepValueChanged = ImGui.DragFloat(" Step Value ", settings.Current.stepValue,
-        0.001, 0.001,
-        0.1,
-        "%.3f", ImGuiSliderFlags.ClampOnInput)
+            settings.Current.stepValue, minValue, maxValue, "%.3f")
+        settings.Current.stepValue, isStepValueChanged = ImGui.DragFloat(" Step Value ", settings.Current.stepValue,
+            0.001, 0.001, 0.1, "%.3f")
     elseif settings.isDefaultGammainPhotoMode and not isPhotoMode and not settings.isDefaultGammainMenus then
         settings.Current.value, isGammaChanged = ImGui.DragFloat(" Gamma ", settings.Current.value,
-        settings.Current.stepValue, minValue,
-        maxValue, "%.3f",
-        ImGuiSliderFlags.ClampOnInput)
-    settings.Current.stepValue, isStepValueChanged = ImGui.DragFloat(" Step Value ", settings.Current.stepValue,
-        0.001, 0.001,
-        0.1,
-        "%.3f", ImGuiSliderFlags.ClampOnInput)
+            settings.Current.stepValue, minValue, maxValue, "%.3f")
+        settings.Current.stepValue, isStepValueChanged = ImGui.DragFloat(" Step Value ", settings.Current.stepValue,
+            0.001, 0.001, 0.1, "%.3f")
     elseif (settings.isDefaultGammainPhotoMode and not isPhotoMode) and (settings.isDefaultGammainMenus and not IsInMenu()) then
         settings.Current.value, isGammaChanged = ImGui.DragFloat(" Gamma ", settings.Current.value,
-        settings.Current.stepValue, minValue,
-        maxValue, "%.3f",
-        ImGuiSliderFlags.ClampOnInput)
-    settings.Current.stepValue, isStepValueChanged = ImGui.DragFloat(" Step Value ", settings.Current.stepValue,
-        0.001, 0.001,
-        0.1,
-        "%.3f", ImGuiSliderFlags.ClampOnInput)
+            settings.Current.stepValue, minValue, maxValue, "%.3f")
+        settings.Current.stepValue, isStepValueChanged = ImGui.DragFloat(" Step Value ", settings.Current.stepValue,
+            0.001, 0.001, 0.1, "%.3f")
     end
 
     if settings.isDefaultGammainMenus then
@@ -159,7 +143,10 @@ registerForEvent("onDraw", function()
     if isGammaChanged then
         if settings.isDefaultGammainMenus and not IsInMenu() then SetGamma(settings.Current.value) end
         if settings.isDefaultGammainPhotoMode and not isPhotoMode then SetGamma(settings.Current.value) end
-        if not settings.isDefaultGammainMenus and not settings.isDefaultGammainPhotoMode then SetGamma(settings.Current.value) end
+        if not settings.isDefaultGammainMenus and not settings.isDefaultGammainPhotoMode then
+            SetGamma(settings.Current
+                .value)
+        end
         SaveSettings()
     end
 
@@ -296,7 +283,6 @@ registerForEvent("onDraw", function()
                 SetGamma(settings.Current.value)
             end
         end
-
     end
 
     text =
@@ -358,7 +344,7 @@ function IncreaseGamma()
 
     if settings.isEnabledNotification then
         notificationText = " Gamma set to " ..
-        string.format("%.3f ", (newGamma <= maxValue) and newGamma or currentGamma)
+            string.format("%.3f ", (newGamma <= maxValue) and newGamma or currentGamma)
         notificationVisible = true
         Cron.After(notificationSeconds, function()
             notificationVisible = false
@@ -393,7 +379,7 @@ function DecreaseGamma()
 
     if settings.isEnabledNotification then
         notificationText = " Gamma set to " ..
-        string.format("%.3f ", (newGamma >= minValue) and newGamma or currentGamma)
+            string.format("%.3f ", (newGamma >= minValue) and newGamma or currentGamma)
         notificationVisible = true
         Cron.After(notificationSeconds, function()
             notificationVisible = false
@@ -539,13 +525,12 @@ registerForEvent('onInit', function()
     Observe('LoadingScreenProgressBarController', 'SetProgress', function(_, progress)
         -- for some fucking reason, the progress doesn't always set to 1.0 when loading is finished
         -- will change Gamma just before the loading screen is ended, but it's a small compromise
-         if progress > 0.91 then
+        if progress > 0.91 then
             if settings.isDefaultGammainMenus then
                 SetGamma(settings.Current.value)
             end
         end
     end)
-
 end)
 
 registerForEvent('onUpdate', function(delta)
