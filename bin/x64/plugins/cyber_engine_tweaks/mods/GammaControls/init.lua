@@ -1,6 +1,9 @@
 local GameSettings = require('Modules/GameSettings')
 local GameUI = require('Modules/GameUI')
 local Cron = require('Modules/Cron')
+local Localization = require("Modules/Localization")
+
+local UIText = Localization.GetUIText()
 
 local isPhotoMode = false
 
@@ -65,6 +68,9 @@ end
 
 registerForEvent("onOverlayOpen", function()
     isOverlayOpen = true
+
+    --translate UIText before other modules access it
+    UIText = Localization.GetTranslation(UIText, "UIText")
 end)
 
 registerForEvent("onOverlayClose", function()
@@ -80,30 +86,34 @@ registerForEvent("onDraw", function()
         return
     end
 
-    ImGui.Begin("Gamma Controls", ImGuiWindowFlags.AlwaysAutoResize)
+    ImGui.Begin(UIText.modName, ImGuiWindowFlags.AlwaysAutoResize)
 
     local isGammaChanged = false
     local isStepValueChanged = false
 
     if not settings.isDefaultGammainMenus and not settings.isDefaultGammainPhotoMode then
-        settings.Current.value, isGammaChanged = ImGui.DragFloat(" Gamma ", settings.Current.value,
+        settings.Current.value, isGammaChanged = ImGui.DragFloat(UIText.dragFloatName, settings.Current.value,
             settings.Current.stepValue, minValue, maxValue, "%.3f")
-        settings.Current.stepValue, isStepValueChanged = ImGui.DragFloat(" Step Value ", settings.Current.stepValue,
+        settings.Current.stepValue, isStepValueChanged = ImGui.DragFloat(UIText.dragFloatStepValue,
+            settings.Current.stepValue,
             0.001, 0.001, 0.1, "%.3f")
     elseif settings.isDefaultGammainMenus and not IsInMenu() and not settings.isDefaultGammainPhotoMode then
-        settings.Current.value, isGammaChanged = ImGui.DragFloat(" Gamma ", settings.Current.value,
+        settings.Current.value, isGammaChanged = ImGui.DragFloat(UIText.dragFloatName, settings.Current.value,
             settings.Current.stepValue, minValue, maxValue, "%.3f")
-        settings.Current.stepValue, isStepValueChanged = ImGui.DragFloat(" Step Value ", settings.Current.stepValue,
+        settings.Current.stepValue, isStepValueChanged = ImGui.DragFloat(UIText.dragFloatStepValue,
+            settings.Current.stepValue,
             0.001, 0.001, 0.1, "%.3f")
     elseif settings.isDefaultGammainPhotoMode and not isPhotoMode and not settings.isDefaultGammainMenus then
-        settings.Current.value, isGammaChanged = ImGui.DragFloat(" Gamma ", settings.Current.value,
+        settings.Current.value, isGammaChanged = ImGui.DragFloat(UIText.dragFloatName, settings.Current.value,
             settings.Current.stepValue, minValue, maxValue, "%.3f")
-        settings.Current.stepValue, isStepValueChanged = ImGui.DragFloat(" Step Value ", settings.Current.stepValue,
+        settings.Current.stepValue, isStepValueChanged = ImGui.DragFloat(UIText.dragFloatStepValue,
+            settings.Current.stepValue,
             0.001, 0.001, 0.1, "%.3f")
     elseif (settings.isDefaultGammainPhotoMode and not isPhotoMode) and (settings.isDefaultGammainMenus and not IsInMenu()) then
-        settings.Current.value, isGammaChanged = ImGui.DragFloat(" Gamma ", settings.Current.value,
+        settings.Current.value, isGammaChanged = ImGui.DragFloat(UIText.dragFloatName, settings.Current.value,
             settings.Current.stepValue, minValue, maxValue, "%.3f")
-        settings.Current.stepValue, isStepValueChanged = ImGui.DragFloat(" Step Value ", settings.Current.stepValue,
+        settings.Current.stepValue, isStepValueChanged = ImGui.DragFloat(UIText.dragFloatStepValue,
+            settings.Current.stepValue,
             0.001, 0.001, 0.1, "%.3f")
     end
 
@@ -112,15 +122,15 @@ registerForEvent("onDraw", function()
             ImGui.Spacing()
             ImGui.Spacing()
             ImGui.PushStyleColor(ImGuiCol.Text, 1.0, 0.23, 0.23, 1.0)
-            ImGui.Text("We are currently inside the Menu.")
-            ImGui.Text("Gamma values can not be changed.")
-            ImGui.Text("Uncheck \"Default Gamma in Menus\" if you want to change the values.")
+            ImGui.Text(UIText.warnInsideMenuText1)
+            ImGui.Text(UIText.warnInsideMenuText2)
+            ImGui.Text(UIText.warnInsideMenuText3)
             ImGui.PopStyleColor(1)
             ImGui.Spacing()
             ImGui.Spacing()
 
-            _, _ = ImGui.DragFloat(" Gamma ", settings.Current.value, 0.0)
-            _, _ = ImGui.DragFloat(" Step Value ", settings.Current.stepValue, 0.0)
+            _, _ = ImGui.DragFloat(UIText.dragFloatName, settings.Current.value, 0.0)
+            _, _ = ImGui.DragFloat(UIText.dragFloatStepValue, settings.Current.stepValue, 0.0)
         end
     end
     if settings.isDefaultGammainPhotoMode then
@@ -128,15 +138,15 @@ registerForEvent("onDraw", function()
             ImGui.Spacing()
             ImGui.Spacing()
             ImGui.PushStyleColor(ImGuiCol.Text, 1.0, 0.23, 0.23, 1.0)
-            ImGui.Text("We are currently inside the Photo Mode.")
-            ImGui.Text("Gamma values can not be changed.")
-            ImGui.Text("Uncheck \"Default Gamma in Photo Mode\" if you want to change the values.")
+            ImGui.Text(UIText.warnInsidePhotoModeText1)
+            ImGui.Text(UIText.warnInsidePhotoModeText2)
+            ImGui.Text(UIText.warnInsidePhotoModeText3)
             ImGui.PopStyleColor(1)
             ImGui.Spacing()
             ImGui.Spacing()
 
-            _, _ = ImGui.DragFloat(" Gamma ", settings.Current.value, 0.0)
-            _, _ = ImGui.DragFloat(" Step Value ", settings.Current.stepValue, 0.0)
+            _, _ = ImGui.DragFloat(UIText.dragFloatName, settings.Current.value, 0.0)
+            _, _ = ImGui.DragFloat(UIText.dragFloatStepValue, settings.Current.stepValue, 0.0)
         end
     end
 
@@ -155,14 +165,14 @@ registerForEvent("onDraw", function()
     end
 
     ImGui.Spacing()
-    if ImGui.Button(" Save ") then
+    if ImGui.Button(UIText.saveButton) then
         settings.Preset.value = settings.Current.value
         settings.Preset.stepValue = settings.Current.stepValue
         SaveSettings()
     end
 
     ImGui.SameLine()
-    if ImGui.Button(" Load ") then
+    if ImGui.Button(UIText.loadButton) then
         if not settings.isDefaultGammainMenus and not settings.isDefaultGammainPhotoMode then
             settings.Current.value = settings.Preset.value
             settings.Current.stepValue = settings.Preset.stepValue
@@ -197,7 +207,7 @@ registerForEvent("onDraw", function()
 
     ImGui.Spacing()
     ImGui.Spacing()
-    if ImGui.Button(" Reset Defaults ") then
+    if ImGui.Button(UIText.resetDefaultsButton) then
         if not settings.isDefaultGammainMenus and not settings.isDefaultGammainPhotoMode then
             settings.Current.value = 1.000
             settings.Current.stepValue = 0.010
@@ -231,7 +241,7 @@ registerForEvent("onDraw", function()
     end
 
     ImGui.Spacing()
-    settings.isDefaultGammainMenus, isDefaultGammainMenusChanged = ImGui.Checkbox("Default Gamma in Menus",
+    settings.isDefaultGammainMenus, isDefaultGammainMenusChanged = ImGui.Checkbox(UIText.defaultGammainMenuToggle,
         settings.isDefaultGammainMenus)
 
     if isDefaultGammainMenusChanged then
@@ -255,12 +265,12 @@ registerForEvent("onDraw", function()
         end
     end
 
-    text =
-    "Set default gamma on game settings, menu, phone popup, radio controls popup, vehicle call controls popup, weapon wheel, loading screen, read shard and tutorial popups."
+    text = UIText.defaultGammainMenuTooltip
     Tooltip(text)
 
     ImGui.Spacing()
-    settings.isDefaultGammainPhotoMode, isDefaultGammainPhotoModeChanged = ImGui.Checkbox("Default Gamma in Photo Mode",
+    settings.isDefaultGammainPhotoMode, isDefaultGammainPhotoModeChanged = ImGui.Checkbox(
+        UIText.defaultGammainPhotoModeToggle,
         settings.isDefaultGammainPhotoMode)
 
     if isDefaultGammainPhotoModeChanged then
@@ -286,18 +296,18 @@ registerForEvent("onDraw", function()
     end
 
     text =
-    "Set default gamma in Photo Mode."
+        UIText.defaultGammainPhotoModeTooltip
     Tooltip(text)
 
     ImGui.Spacing()
-    settings.isEnabledNotification, isNotificationSettingChanged = ImGui.Checkbox("Show Notification",
+    settings.isEnabledNotification, isNotificationSettingChanged = ImGui.Checkbox(UIText.showNotificaitonToggle,
         settings.isEnabledNotification)
 
     if isNotificationSettingChanged then
         SaveSettings()
     end
 
-    text = "Disable it if you experience crashes when rapidly toggling settings.Current."
+    text = UIText.showNotificaitonTooltip
     Tooltip(text)
 
     ImGui.End()
@@ -324,7 +334,7 @@ function IncreaseGamma()
     if (settings.isDefaultGammainMenus and IsInMenu()) or (settings.isDefaultGammainPhotoMode and isPhotoMode) then
         if settings.isEnabledNotification then
             r, g, b = 1.0, 0.23, 0.23
-            notificationText = " Gamma cannot be changed "
+            notificationText = UIText.gammaNotChangedNotificaiton
             notificationVisible = true
             Cron.After(notificationSeconds, function()
                 notificationVisible = false
@@ -343,7 +353,7 @@ function IncreaseGamma()
     end
 
     if settings.isEnabledNotification then
-        notificationText = " Gamma set to " ..
+        notificationText = UIText.gammaSetToNotificaiton ..
             string.format("%.3f ", (newGamma <= maxValue) and newGamma or currentGamma)
         notificationVisible = true
         Cron.After(notificationSeconds, function()
@@ -359,7 +369,7 @@ function DecreaseGamma()
     if (settings.isDefaultGammainMenus and IsInMenu()) or (settings.isDefaultGammainPhotoMode and isPhotoMode) then
         if settings.isEnabledNotification then
             r, g, b = 1.0, 0.23, 0.23
-            notificationText = " Gamma cannot be changed "
+            notificationText = UIText.gammaNotChangedNotificaiton
             notificationVisible = true
             Cron.After(notificationSeconds, function()
                 notificationVisible = false
@@ -378,7 +388,7 @@ function DecreaseGamma()
     end
 
     if settings.isEnabledNotification then
-        notificationText = " Gamma set to " ..
+        notificationText = UIText.gammaSetToNotificaiton ..
             string.format("%.3f ", (newGamma >= minValue) and newGamma or currentGamma)
         notificationVisible = true
         Cron.After(notificationSeconds, function()
@@ -538,14 +548,14 @@ registerForEvent('onUpdate', function(delta)
     Cron.Update(delta)
 end)
 
-registerInput("GammaIncrease", "Increase Gamma", function(isKeyDown)
+registerInput("GammaIncrease", UIText.increaseGammaRegisterInput, function(isKeyDown)
     if not isKeyDown then
         return
     end
     IncreaseGamma()
 end)
 
-registerInput("GammaDecrease", "Decrease Gamma", function(isKeyDown)
+registerInput("GammaDecrease", UIText.decreaseGammaRegisterInput, function(isKeyDown)
     if not isKeyDown then
         return
     end
